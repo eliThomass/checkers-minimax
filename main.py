@@ -5,12 +5,9 @@ WHITE = 2
 BLACK_KING = 3
 WHITE_KING = 4
 
-class MinimaxAB():
+class Board():
     def __init__(self, debug):
         self.initialize_board()
-        self.board[3][2] = WHITE
-        self.board[5][0] = EMPTY
-        self.board[6][5] = EMPTY
         self.debug = debug
 
     def initialize_board(self):
@@ -47,6 +44,32 @@ class MinimaxAB():
             print(f"{r_idx} | {' '.join(row_viz)} |")
         print("  -----------------")
 
+    def display_moves(self, moves, player):
+        """
+        Formats and prints the list of available moves for the CLI menu.
+        """
+        player_name = "WHITE" if player == WHITE else "BLACK"
+        
+        # Check the row distance of the first move to see if it's a jump
+        are_jumps = False
+        if moves and len(moves[0]) >= 2:
+            r1, _ = moves[0][0]
+            r2, _ = moves[0][1]
+            if abs(r1 - r2) == 2:
+                are_jumps = True
+                
+        move_type = "Jumps (Mandatory)" if are_jumps else "Slides"
+        
+        print(f"\n--- Available {move_type} for {player_name} ---")
+        if not moves:
+            print("  No legal moves available.")
+        else:
+            for i, move in enumerate(moves, start=1):
+                # Formats [(2, 1), (4, 3), (6, 5)] into "(2, 1) -> (4, 3) -> (6, 5)"
+                path = " -> ".join([f"({r}, {c})" for r, c in move])
+                print(f"  {i}) {path}")
+        print("-----------------------------------\n")
+
     def get_legal_moves(self, player):
         """
         A function which returns all legal moves for a given player (BLACK/WHITE).
@@ -68,7 +91,6 @@ class MinimaxAB():
                     elif not jumps:
                         slides.extend(self.find_slides(r, c))
 
-        print(f"movement for {player}: \njumps = {jumps} \nslides = {slides}\n") if self.debug else 0
         return jumps if jumps else slides
 
     def is_on_board(self, r, c):
@@ -143,7 +165,7 @@ class MinimaxAB():
 
     def find_slides(self, r, c):
         """
-        A function to calculate all legal slides (non-capturing diagonal movements)
+        Calculates all legal slides (non-capturing diagonal movements)
         for a piece (r, c).
         Only called if no jumps are found for given piece on the board.
         """
@@ -155,12 +177,54 @@ class MinimaxAB():
                 slides.append(((r, c), (nr, nc)))
         return slides
 
+    def make_move(self, move):
+        """
+        Executes a given move sequence on the board.
+        Handles standard slides, single jumps, multi-jumps, and king promotions.
+        'move' format: [(start_r, start_c), (land1_r, land1_c), ...]
+        """
+        start_r, start_c = move[0]
+        end_r, end_c = move[-1]
+        
+        # Grab the piece before we overwrite its starting square
+        piece = self.board[start_r][start_c]
+
+        # 1. Move the piece to the final destination
+        self.board[start_r][start_c] = EMPTY
+        self.board[end_r][end_c] = piece
+
+        # 2. Check for captures and remove jumped pieces
+        # We look at each step in the sequence pairwise (e.g., step 0 to 1, step 1 to 2)
+        for i in range(len(move) - 1):
+            r1, c1 = move[i]
+            r2, c2 = move[i + 1]
+            
+            # If the row distance is 2, it was a jump
+            if abs(r1 - r2) == 2:
+                # The jumped piece is exactly halfway between the start and landing spot
+                mid_r = (r1 + r2) // 2
+                mid_c = (c1 + c2) // 2
+                self.board[mid_r][mid_c] = EMPTY
+
+        # 3. Handle King Promotion
+        if piece == WHITE and end_r == 0:
+            self.board[end_r][end_c] = WHITE_KING
+        elif piece == BLACK and end_r == 7:
+            self.board[end_r][end_c] = BLACK_KING
 
 if __name__ == "__main__":
-    test = MinimaxAB(debug=True)
+    test = Board(debug=True)
+    to_play = BLACK
 
-    cur_player = "BLACK"
+    while True:
+        test.display()
+        moves = test.get_legal_moves(to_play)
+        test.display_moves(moves, to_play)
+        chosen_move = int(input("Type a move to play (integer 1-indexed): "))
+        test.make_move(moves[chosen_move - 1])
 
-    test.display()
-    test.get_legal_moves(cur_player)
-
+        if to_play == 1:
+            to_play = 2
+        else:
+            to_play = 1
+        
