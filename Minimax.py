@@ -65,6 +65,11 @@ class Minimax():
         if not legal_moves:
             return None
 
+        # Move ordering to reduce time complexity.
+        # Push moves which capture (jump) to the front of the legal_moves list, and slide moves go to the back.
+        # We check this by looking at the row distance between the start and the first landing spot.
+        legal_moves.sort(key=lambda m: abs(m[0][0] - m[1][0]) == 2, reverse=True)
+
         best_moves = []
         # we are alpha
         best_eval = float('-inf')
@@ -108,6 +113,11 @@ class Minimax():
         # Determine whose turn it is in this simulated timeline
         current_turn = max_player if is_maximizing else (WHITE if max_player == BLACK else BLACK)
         legal_moves = board.get_legal_moves(current_turn)
+
+        # Move ordering to reduce time complexity. O(b^d) -> O(sqrt(b^d)
+        # Push moves which capture (jump) to the front of the legal_moves list, and slide moves go to the back.
+        # We check this by looking at the row distance between the start and the first landing spot.
+        legal_moves.sort(key=lambda m: abs(m[0][0] - m[1][0]) == 2, reverse=True)
 
         # Reached max depth or game over are base cases here
         if depth == 0 or not legal_moves:
