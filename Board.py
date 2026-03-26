@@ -22,6 +22,8 @@ class Board():
                     if r < 3: self.board[r][c] = BLACK
                     elif r > 4: self.board[r][c] = WHITE
 
+    def get_board(self):
+        return self.board
 
     def display(self):
         """
