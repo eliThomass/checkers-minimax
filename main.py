@@ -1,230 +1,34 @@
-# Constants
-EMPTY = 0
-BLACK = 1
-WHITE = 2
-BLACK_KING = 3
-WHITE_KING = 4
-
-class Board():
-    def __init__(self, debug):
-        self.initialize_board()
-        self.debug = debug
-
-    def initialize_board(self):
-        """
-        Creates an 8x8 2D list representing the starting state of English Checkers.
-        Black pieces are placed on rows 0-2, and White pieces on rows 5-7.
-        """
-        self.board = [[EMPTY for _ in range(8)] for _ in range(8)]
-        for r in range(8):
-            for c in range(8):
-                if (r + c) % 2 != 0:
-                    if r < 3: self.board[r][c] = BLACK
-                    elif r > 4: self.board[r][c] = WHITE
-
-
-    def display(self):
-        """
-        A utility function to visualize the board state in the terminal.
-        """
-        # Mapping numbers to visual characters
-        symbols = {
-            EMPTY: ".",
-            BLACK: "b",
-            WHITE: "w",
-            BLACK_KING: "B",
-            WHITE_KING: "W"
-        }
-        
-        print("\n    0 1 2 3 4 5 6 7") # Column headers
-        print("  -----------------")
-        for r_idx, row in enumerate(self.board):
-            # Convert row values to symbols
-            row_viz = [symbols[val] for val in row]
-            print(f"{r_idx} | {' '.join(row_viz)} |")
-        print("  -----------------")
-
-    def display_moves(self, moves, player):
-        """
-        Formats and prints the list of available moves for the CLI menu.
-        """
-        player_name = "WHITE" if player == WHITE else "BLACK"
-        
-        # Check the row distance of the first move to see if it's a jump
-        are_jumps = False
-        if moves and len(moves[0]) >= 2:
-            r1, _ = moves[0][0]
-            r2, _ = moves[0][1]
-            if abs(r1 - r2) == 2:
-                are_jumps = True
-                
-        move_type = "Jumps (Mandatory)" if are_jumps else "Slides"
-        
-        print(f"\n--- Available {move_type} for {player_name} ---")
-        if not moves:
-            print("  No legal moves available.")
-        else:
-            for i, move in enumerate(moves, start=1):
-                # Formats [(2, 1), (4, 3), (6, 5)] into "(2, 1) -> (4, 3) -> (6, 5)"
-                path = " -> ".join([f"({r}, {c})" for r, c in move])
-                print(f"  {i}) {path}")
-        print("-----------------------------------\n")
-
-    def get_legal_moves(self, player):
-        """
-        A function which returns all legal moves for a given player (BLACK/WHITE).
-        """
-        jumps = []
-        slides = []
-        
-        # Determine directions based on piece type/player
-        # White moves row - 1, Black moves row + 1
-        for r in range(8):
-            for c in range(8):
-                piece = self.board[r][c]
-                if self.is_player_piece(piece, player):
-                    piece_jumps = self.find_jumps(r, c)
-                    if piece_jumps:
-                        jumps.extend(piece_jumps)
-
-                    # Only look for slides if no jumps found yet
-                    elif not jumps:
-                        slides.extend(self.find_slides(r, c))
-
-        return jumps if jumps else slides
-
-    def is_on_board(self, r, c):
-        return 0 <= r < 8 and 0 <= c < 8
-
-    def get_piece_directions(self, r, c, board):
-        """
-        Helper function for get_slides and get_jumps
-        Returns valid directions of movement based on piece type
-        """
-        piece = board[r][c]
-        if piece == WHITE: return [(-1, -1), (-1, 1)]
-        if piece == BLACK: return [(1, -1), (1, 1)]
-        if piece in [WHITE_KING, BLACK_KING]: return [(-1, -1), (-1, 1), (1, -1), (1, 1)]
-        return []
-
-    def is_player_piece(self, piece, player):
-        """
-        A function which determines if a given piece matches playing player. 
-        """
-        if player == WHITE:
-            return piece in [WHITE, WHITE_KING]
-        return piece in [BLACK, BLACK_KING]
-
-    def find_jumps(self, r, c, board_state=None):
-        """
-        Recursively finds all capturing sequences including multi-jumps.
-        Returns a list of move sequences: [[(r,c), (r2,c2)], [(r,c), (r2,c2), (r3,c3)]]
-        We need board-state parameter to pass temporary board states to find successive jumps
-        """
-        if board_state is None:
-            board_state = self.board
-            
-        piece = board_state[r][c]
-        player = WHITE if piece in [WHITE, WHITE_KING] else BLACK
-        opponent = [BLACK, BLACK_KING] if player == WHITE else [WHITE, WHITE_KING]
-        
-        all_sequences = []
-        found_any_jump = False
-
-        for dr, dc in self.get_piece_directions(r, c, board_state):
-            # Midpoint (enemy to jump) and landing spot
-            mr, mc = r + dr, c + dc
-            lr, lc = r + 2*dr, c + 2*dc
-
-            if self.is_on_board(lr, lc):
-                if board_state[mr][mc] in opponent and board_state[lr][lc] == EMPTY:
-                    found_any_jump = True
-                    
-                    # Create a temporary board to simulate the jump for multi-jump detection
-                    temp_board = [row[:] for row in board_state]
-                    temp_board[lr][lc] = piece
-                    temp_board[mr][mc] = EMPTY
-                    temp_board[r][c] = EMPTY
-                    
-                    # If a piece becomes a King, its turn ends (rule)
-                    became_king = (player == WHITE and lr == 0) or (player == BLACK and lr == 7)
-                    
-                    # Recursively look for more jumps from the landing spot
-                    if piece in [WHITE, BLACK] and became_king:
-                        sub_jumps = [] # Turn ends on promotion
-                    else:
-                        sub_jumps = self.find_jumps(lr, lc, temp_board)
-
-                    if sub_jumps:
-                        for seq in sub_jumps:
-                            all_sequences.append([(r, c)] + seq)
-                    else:
-                        all_sequences.append([(r, c), (lr, lc)])
-
-        return all_sequences
-
-    def find_slides(self, r, c):
-        """
-        Calculates all legal slides (non-capturing diagonal movements)
-        for a piece (r, c).
-        Only called if no jumps are found for given piece on the board.
-        """
-        slides = []
-        for dr, dc in self.get_piece_directions(r, c, self.board):
-            nr, nc = r + dr, c + dc
-            if self.is_on_board(nr, nc) and self.board[nr][nc] == EMPTY:
-                # Format: ((start_r, start_c), (end_r, end_c))
-                slides.append(((r, c), (nr, nc)))
-        return slides
-
-    def make_move(self, move):
-        """
-        Executes a given move sequence on the board.
-        Handles standard slides, single jumps, multi-jumps, and king promotions.
-        'move' format: [(start_r, start_c), (land1_r, land1_c), ...]
-        """
-        start_r, start_c = move[0]
-        end_r, end_c = move[-1]
-        
-        # Grab the piece before we overwrite its starting square
-        piece = self.board[start_r][start_c]
-
-        # 1. Move the piece to the final destination
-        self.board[start_r][start_c] = EMPTY
-        self.board[end_r][end_c] = piece
-
-        # 2. Check for captures and remove jumped pieces
-        # We look at each step in the sequence pairwise (e.g., step 0 to 1, step 1 to 2)
-        for i in range(len(move) - 1):
-            r1, c1 = move[i]
-            r2, c2 = move[i + 1]
-            
-            # If the row distance is 2, it was a jump
-            if abs(r1 - r2) == 2:
-                # The jumped piece is exactly halfway between the start and landing spot
-                mid_r = (r1 + r2) // 2
-                mid_c = (c1 + c2) // 2
-                self.board[mid_r][mid_c] = EMPTY
-
-        # 3. Handle King Promotion
-        if piece == WHITE and end_r == 0:
-            self.board[end_r][end_c] = WHITE_KING
-        elif piece == BLACK and end_r == 7:
-            self.board[end_r][end_c] = BLACK_KING
+from Board import *
+from Minimax import *
 
 if __name__ == "__main__":
-    test = Board(debug=True)
-    to_play = BLACK
+    game = Board(debug=False) 
+    minimax = Minimax()
+    print(minimax.alpha)
+    cur_player = BLACK
 
     while True:
-        test.display()
-        moves = test.get_legal_moves(to_play)
-        test.display_moves(moves, to_play)
-        chosen_move = int(input("Type a move to play (integer 1-indexed): "))
-        test.make_move(moves[chosen_move - 1])
-
-        if to_play == 1:
-            to_play = 2
-        else:
-            to_play = 1
+        game.display()
+        moves = game.get_legal_moves(cur_player)
         
+        if not moves:
+            print("Game Over! No moves left.")
+            break
+            
+        # Display the formatted menu
+        game.display_moves(moves, cur_player)
+        
+        # 1-indexed input loop
+        try:
+            choice = int(input("Select a move number (or 0 to quit): "))
+            if choice == 0:
+                break
+            if 1 <= choice <= len(moves):
+                game.make_move(moves[choice - 1])
+                # Swap turns
+                cur_player = WHITE if cur_player == BLACK else BLACK
+            else:
+                print("Invalid choice. Try again.")
+        except ValueError:
+            print("Please enter a valid number.")
+
