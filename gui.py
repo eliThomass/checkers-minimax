@@ -3,7 +3,7 @@ import math
 from Board import *
 from Minimax import *
 
-# --- GUI CONSTANTS ---
+# Constant stuff 
 WIDTH, HEIGHT = 800, 800
 ROWS, COLS = 8, 8
 SQUARE_SIZE = WIDTH // COLS
@@ -26,7 +26,7 @@ FONT_LARGE = pygame.font.SysFont("arial", 50, bold=True)
 FONT_MED = pygame.font.SysFont("arial", 30)
 FONT_SMALL = pygame.font.SysFont("arial", 20)
 
-# --- HELPER CLASSES & FUNCTIONS ---
+# Helper functions 
 class Button:
     def __init__(self, x, y, width, height, text, value=None):
         self.rect = pygame.Rect(x, y, width, height)
@@ -62,22 +62,23 @@ def draw_board(win, board_obj, selected_square, valid_moves):
     """Draws the grid, highlights, and pieces based on the Board object."""
     win.fill(BLACK_CLR)
     
-    # 1. Draw Squares
+    # Draw Squares
     for row in range(ROWS):
         for col in range(COLS):
             color = LIGHT_BROWN if (row + col) % 2 == 0 else DARK_BROWN
             pygame.draw.rect(win, color, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
             
-    # 2. Draw Highlights
+    # Draw Highlights
     if selected_square:
         r, c = selected_square
         pygame.draw.rect(win, HIGHLIGHT, (c * SQUARE_SIZE, r * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE), 5)
-        
+    
+    # Draw moves
     for move in valid_moves:
         end_r, end_c = move[-1]
         pygame.draw.circle(win, HIGHLIGHT, (end_c * SQUARE_SIZE + SQUARE_SIZE // 2, end_r * SQUARE_SIZE + SQUARE_SIZE // 2), 15)
 
-    # 3. Draw Pieces
+    # Draw Pieces
     grid = board_obj.get_board()
     for row in range(ROWS):
         for col in range(COLS):
@@ -96,7 +97,6 @@ def get_row_col_from_mouse(pos):
     x, y = pos
     return y // SQUARE_SIZE, x // SQUARE_SIZE
 
-# --- THE MAIN MENU ---
 def main_menu(win):
     """Runs a pre-game loop to gather settings, returns (game_type, depth, random_ties)"""
     run = True
@@ -109,7 +109,7 @@ def main_menu(win):
     # Setup Buttons
     btn_ai_ai = Button(100, 200, 180, 50, "AI vs AI", 0)
     btn_ai_hu = Button(310, 200, 180, 50, "AI vs Human", 1)
-    btn_hu_hu = Button(520, 200, 180, 50, "Human vs Human", 2)
+    btn_hu_hu = Button(520, 200, 250, 50, "Human vs Human", 2)
     mode_btns = [btn_ai_ai, btn_ai_hu, btn_hu_hu]
 
     btn_depth_down = Button(250, 350, 50, 50, "-")
@@ -123,7 +123,7 @@ def main_menu(win):
         win.fill(MENU_BG)
         
         # Draw Text
-        title = FONT_LARGE.render("CHECKERS ENGINE", True, WHITE_CLR)
+        title = FONT_LARGE.render("CHECKERS CHECKER", True, WHITE_CLR)
         win.blit(title, (WIDTH//2 - title.get_width()//2, 50))
         
         mode_txt = FONT_MED.render("Select Game Mode:", True, WHITE_CLR)
@@ -181,16 +181,16 @@ def main_menu(win):
                 if btn_start.is_hovered:
                     return game_type, ai_depth, random_ties
 
-# --- MAIN GAME LOOP ---
+# Main game loop 
 def main():
     pygame.init()
     win = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Phase 4: Checkers Engine GUI")
     
-    # 1. Run the Menu First
+    # Run the menu first 
     game_type, ai_depth, random_ties = main_menu(win)
     
-    # 2. Initialize Game Objects
+    # Initialize Game Objects
     game = Board(debug=False)
     ai_bot = Minimax(max_depth=ai_depth, random_ties=random_ties) 
     
@@ -226,17 +226,17 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
             
-            # --- HUMAN TURN (Event Loop) ---
+            # Human Turn 
             if event.type == pygame.MOUSEBUTTONDOWN and is_human_turn:
                 pos = pygame.mouse.get_pos()
                 row, col = get_row_col_from_mouse(pos)
                 
-                # Clicked our own piece? Select it.
+                # Select clicked piece if it is a player piece 
                 if game.is_player_piece(game.get_board()[row][col], cur_player):
                     selected_piece = (row, col)
                     valid_moves_for_selection = [m for m in available_moves_for_player if m[0] == (row, col)]
                 
-                # Clicked a valid landing spot? Move it.
+                # Move to a valid spot if clicked 
                 elif selected_piece:
                     for move in valid_moves_for_selection:
                         if move[-1] == (row, col):
@@ -246,12 +246,13 @@ def main():
                             valid_moves_for_selection = []
                             break
 
-        # --- AI TURN ---
+        # AI Turn
         if not is_human_turn:
-            # Add a visual delay so AI vs AI games don't finish in 0.2 seconds
+            # Add delay so AI vs AI games don't finish in 0.2 seconds
             pygame.time.delay(500) 
             eval_score, best_move = ai_bot.get_best_move(game, cur_player)
-            
+           
+            # Simply choose the best move and play it, easy
             if best_move:
                 game.make_move(best_move)
                 cur_player = BLACK if cur_player == WHITE else WHITE

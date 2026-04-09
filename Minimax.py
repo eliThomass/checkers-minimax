@@ -2,8 +2,8 @@ import ctypes
 import os
 import random
 
-# Determine correct library extension based on OS
-ext = '.dll' if os.name == 'nt' else '.so'
+# Get library extension
+ext = '.so'
 lib_path = os.path.join(os.path.dirname(__file__), f'engine{ext}')
 
 # Load the C++ Shared Library
@@ -28,7 +28,8 @@ engine.get_best_move_c.argtypes = [
     ctypes.c_int,                 # max_player
     ctypes.c_int,                 # depth
     ctypes.c_bool,                # random_ties
-    ctypes.POINTER(CMove)         # out_move (pointer to write the answer to)
+    ctypes.POINTER(CMove),        # out_move (pointer to write the answer to)
+    ctypes.c_int                  # eval score
 ]
 engine.get_best_move_c.restype = None
 
@@ -41,33 +42,36 @@ class Minimax:
     def get_best_move(self, board, max_player):
         """
         Flattens the Python board, passes it to C++, and translates the result.
-        Returns the move as a standard Python list of tuples, e.g., [(2,1), (3,2)]
+        Returns the move as a Python list of tuples, e.g., [(2,1), (3,2)]
         """
-        # 1. Flatten the 8x8 2D Python list into a 1D C-Array of 64 ints
+        # Flatten the 8x8 2D Python list into a 1D C-Array of 64 ints
         flat_list = [item for sublist in board.get_board() for item in sublist]
         c_board = (ctypes.c_int * 64)(*flat_list)
         
-        # 2. Create an empty CMove struct for C++ to write the answer into
+        # Create an empty CMove struct for C++ to write the answer into
         out_move = CMove()
+        score = 0
         
-        # 3. Call the hyper-fast C++ Engine
+        # Call the C++ Engine that was compiled
         engine.get_best_move_c(
             c_board, 
             ctypes.c_int(max_player), 
             ctypes.c_int(self.max_depth), 
             ctypes.c_bool(self.random_ties), 
-            ctypes.byref(out_move)
+            ctypes.byref(out_move),
+            ctypes.c_int(score)
         )
         
-        # 4. If length is 0, the AI surrendered or has no moves
+        # If length is 0, the AI surrendered or has no moves
         if out_move.len == 0:
             return None, None
             
-        # 5. Translate the C-Struct back into your Python standard format
+        # Translate the C-Struct back into Python standard format
         python_move = []
         for i in range(out_move.len):
             python_move.append((out_move.r[i], out_move.c[i]))
             
         # Return a dummy evaluation score and the actual move sequence
         # (The C++ engine only returns the move to save memory/complexity)
+        print(score, python_move)
         return 0, python_move

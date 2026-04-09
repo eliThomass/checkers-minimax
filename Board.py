@@ -47,9 +47,7 @@ class Board():
         print("  -----------------")
 
     def display_moves(self, moves, player):
-        """
-        Formats and prints the list of available moves for the CLI menu.
-        """
+        """ Formats and prints the list of available moves for the CLI menu. """
         player_name = "WHITE" if player == WHITE else "BLACK"
         
         # Check the row distance of the first move to see if it's a jump
@@ -191,11 +189,11 @@ class Board():
         # Grab the piece before we overwrite its starting square
         piece = self.board[start_r][start_c]
 
-        # 1. Move the piece to the final destination
+        # Move the piece to the final destination
         self.board[start_r][start_c] = EMPTY
         self.board[end_r][end_c] = piece
 
-        # 2. Check for captures and remove jumped pieces
+        # Check for captures and remove jumped pieces
         # We look at each step in the sequence pairwise (e.g., step 0 to 1, step 1 to 2)
         for i in range(len(move) - 1):
             r1, c1 = move[i]
@@ -208,7 +206,7 @@ class Board():
                 mid_c = (c1 + c2) // 2
                 self.board[mid_r][mid_c] = EMPTY
 
-        # 3. Handle King Promotion
+        # King promotion
         if piece == WHITE and end_r == 0:
             self.board[end_r][end_c] = WHITE_KING
         elif piece == BLACK and end_r == 7:

@@ -15,6 +15,8 @@ if __name__ == "__main__":
         use_random = bool(random_input)
 
     game = Board(debug=False) 
+    # game Board gets passed to python minimax function.
+    # Then this board gets passed to C++ minimax function (1D Array).
     minimax = Minimax(max_depth=ai_depth, random_ties=use_random) 
     
     cur_player = BLACK
