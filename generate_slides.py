@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def generate_slide_graphics(csv_file="checkers_benchmark_results_no_tie_breaks.csv"):
-    # 1. Load and process the data
+    # Load data 
     try:
         df = pd.read_csv(csv_file)
     except FileNotFoundError:
@@ -33,10 +33,10 @@ def generate_slide_graphics(csv_file="checkers_benchmark_results_no_tie_breaks.c
         draws.append((dr / total) * 100)
         boss_wins.append((bw / total) * 100)
 
-    # --- PLOT 1: TIME COMPLEXITY (The Exponential Curve) ---
+    # PLOT 1: TIME COMPLEXITY 
     plt.style.use('seaborn-v0_8-darkgrid')
-    fig1, ax1 = plt.subplots(figsize=(8, 6), dpi=300) # High DPI for crisp slides
-    
+    fig1, ax1 = plt.subplots(figsize=(8, 6), dpi=300)     
+
     ax1.plot(depths, avg_times, marker='o', color='#E63946', linewidth=3, markersize=8)
     ax1.fill_between(depths, avg_times, color='#E63946', alpha=0.1)
     
@@ -50,7 +50,7 @@ def generate_slide_graphics(csv_file="checkers_benchmark_results_no_tie_breaks.c
     fig1.savefig("slide_graph_time.png")
     print("Saved 'slide_graph_time.png'")
 
-    # --- PLOT 2: OUTCOMES (The Intelligence Curve) ---
+    # PLOT 2: OUTCOMES 
     fig2, ax2 = plt.subplots(figsize=(8, 6), dpi=300)
     
     bar_width = 0.6

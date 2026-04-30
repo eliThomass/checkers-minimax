@@ -6,7 +6,7 @@ from Minimax import *
 def run_benchmarks():
     filename = "checkers_benchmark_results_no_tie_breaks.csv"
 
-    # We will test depths 1-10 on this "boss" depth
+    # We will test depths 1-13 on this "boss" depth
     boss_depth = 10
     games_per_depth = 2
 
@@ -20,12 +20,12 @@ def run_benchmarks():
         print(f"=== STARTING AI BENCHMARK ===")
         print(f"Results will be saved in real-time to {filename}\n")
 
-        # Loop through depths 1 to 14
-        for test_depth in range(1, 15):
+        # Loop through depths 1 to 13
+        for test_depth in range(1, 14):
             print(f"--- INITIATING DEPTH {test_depth} vs DEPTH {boss_depth} ---")
             
             for game_num in range(1, games_per_depth + 1):
-                # We need random tie-breaks to ensure different outcomes 
+                # Turned off random tie-break (having it on resulted in a washout effect, lowering performance)
                 test_ai = Minimax(max_depth=test_depth, random_ties=False)
                 boss_ai = Minimax(max_depth=boss_depth, random_ties=False)
                 game = Board(debug=False)
@@ -88,7 +88,7 @@ def run_benchmarks():
                 file.flush() 
                 
                 # CLI Feedback
-                print(f"Depth {test_depth} | Game {game_num}/20 | Test as {color_str} | Winner: {winner_name} | Test Avg: {round(test_avg, 3)}s")
+                print(f"Depth {test_depth} | Game {game_num}/2 | Test as {color_str} | Winner: {winner_name} | Test Avg: {round(test_avg, 3)}s")
 
 if __name__ == "__main__":
     run_benchmarks()
