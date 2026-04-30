@@ -18,7 +18,8 @@ A C++/Python hybrid Checkers AI. Uses Minimax with Alpha-Beta pruning and determ
 
 ## Usage
 
-* **Play the Game (GUI):** ```bash
+* **Play the Game (GUI):** 
+  ```bash
   python3 gui.py
   ```
 * **Run Automated Benchmarks:** Outputs match results and time complexities to CSV.
