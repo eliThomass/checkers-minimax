@@ -167,9 +167,19 @@ public:
                 int score = 0;
                 if (piece == BLACK || piece == WHITE) {
                     score = 10;
+
+                    // Moving forward gives more points
                     score += (piece == BLACK) ? r : (7 - r);
+                    
+                    // Keeping pieces on the back row prevents opponent from getting king promotion easily
+                    if (piece == BLACK && r == 0) score += 3;
+                    if (piece == WHITE && r == 7) score += 3;
+
+                    // Pieces on the edge cannot be jumped over
+                    if (c == 0 || c == 7) score += 1;
                 } else if (piece == BLACK_KING || piece == WHITE_KING) {
-                    score = 25;
+                    score = 30;
+                    // We want kings positioned in the center for control
                     if (r >= 2 && r <= 5 && c >= 2 && c <= 5) score += 3;
                 }
 

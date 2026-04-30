@@ -185,7 +185,7 @@ def main_menu(win):
 def main():
     pygame.init()
     win = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Phase 4: Checkers Engine GUI")
+    pygame.display.set_caption("Checkers Checker")
     
     # Run the menu first 
     game_type, ai_depth, random_ties = main_menu(win)

@@ -73,5 +73,5 @@ class Minimax:
             
         # Return a dummy evaluation score and the actual move sequence
         # (The C++ engine only returns the move to save memory/complexity)
-        print(score, python_move)
+        # The eval score is kinda not used, but let's keep it just for future use/reference.
         return 0, python_move
