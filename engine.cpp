@@ -192,7 +192,8 @@ public:
 };
 
 // MINIMAX LOGIC
-int alpha_beta(BoardCPP board, int depth, int alpha, int beta, bool is_max, int max_player) {
+int alpha_beta(BoardCPP board, int depth, int alpha, int beta, bool is_max, int max_player, int& node_count) {
+    node_count++;
     int current_turn = is_max ? max_player : (max_player == BLACK ? WHITE : BLACK);
     std::vector<Move> moves = board.get_legal_moves(current_turn);
 
@@ -211,7 +212,7 @@ int alpha_beta(BoardCPP board, int depth, int alpha, int beta, bool is_max, int 
         for (Move m : moves) {
             BoardCPP sim = board;
             sim.make_move(m);
-            int eval = alpha_beta(sim, depth - 1, alpha, beta, false, max_player);
+            int eval = alpha_beta(sim, depth - 1, alpha, beta, false, max_player, node_count);
             max_eval = std::max(max_eval, eval);
             alpha = std::max(alpha, eval);
             if (beta <= alpha) break;
@@ -222,7 +223,7 @@ int alpha_beta(BoardCPP board, int depth, int alpha, int beta, bool is_max, int 
         for (Move m : moves) {
             BoardCPP sim = board;
             sim.make_move(m);
-            int eval = alpha_beta(sim, depth - 1, alpha, beta, true, max_player);
+            int eval = alpha_beta(sim, depth - 1, alpha, beta, true, max_player, node_count);
             min_eval = std::min(min_eval, eval);
             beta = std::min(beta, eval);
             if (beta <= alpha) break;
@@ -234,15 +235,18 @@ int alpha_beta(BoardCPP board, int depth, int alpha, int beta, bool is_max, int 
 // Python to C API 
 extern "C" {
     // Here is where we pass in our flat_board for lower memory usage.
-    void get_best_move_c(int* flat_board, int max_player, int depth, bool random_ties, Move* out_move) {
+    void get_best_move_c(int* flat_board, int max_player, int depth, bool random_ties, Move* out_move, int* out_nodes) {
         BoardCPP root(flat_board);
         std::vector<Move> moves = root.get_legal_moves(max_player);
         
         if (moves.empty()) {
             out_move->len = 0;
+            if (out_nodes) *out_nodes = 0;
             return;
         }
 
+
+        int node_count = 1; // Starts at one to count the root node
         std::vector<Move> best_moves;
         int best_eval = -999999;
         int alpha = -999999; // The player who calls this function will always be alpha (maximizing player)
@@ -252,7 +256,7 @@ extern "C" {
             BoardCPP sim = root;
             sim.make_move(m);
             // Calls our main minimax function with pruning
-            int eval = alpha_beta(sim, depth - 1, alpha, 999999, false, max_player);
+            int eval = alpha_beta(sim, depth - 1, alpha, 999999, false, max_player, node_count);
 
             // Save the best move
             if (eval > best_eval) {
@@ -273,6 +277,11 @@ extern "C" {
         } else {
             // Otherwise just choose first best move
             *out_move = best_moves[0];
+        }
+        
+        // Save node count to mem address given by python
+        if (out_nodes) {
+            *out_nodes = node_count;
         }
     }
 }

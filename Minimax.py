@@ -29,7 +29,7 @@ engine.get_best_move_c.argtypes = [
     ctypes.c_int,                 # depth
     ctypes.c_bool,                # random_ties
     ctypes.POINTER(CMove),        # out_move (pointer to write the answer to)
-    ctypes.c_int                  # eval score
+    ctypes.POINTER(ctypes.c_int)  # node count
 ]
 engine.get_best_move_c.restype = None
 
@@ -50,7 +50,7 @@ class Minimax:
         
         # Create an empty CMove struct for C++ to write the answer into
         out_move = CMove()
-        score = 0
+        out_nodes = ctypes.c_int()
         
         # Call the C++ Engine that was compiled
         engine.get_best_move_c(
@@ -59,7 +59,7 @@ class Minimax:
             ctypes.c_int(self.max_depth), 
             ctypes.c_bool(self.random_ties), 
             ctypes.byref(out_move),
-            ctypes.c_int(score)
+            ctypes.byref(out_nodes)
         )
         
         # If length is 0, the AI surrendered or has no moves
@@ -71,7 +71,5 @@ class Minimax:
         for i in range(out_move.len):
             python_move.append((out_move.r[i], out_move.c[i]))
             
-        # Return a dummy evaluation score and the actual move sequence
-        # (The C++ engine only returns the move to save memory/complexity)
-        # The eval score is kinda not used, but let's keep it just for future use/reference.
-        return 0, python_move
+        # return actual move used and number of nodes visited 
+        return out_nodes.value, python_move

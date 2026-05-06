@@ -250,7 +250,8 @@ def main():
         if not is_human_turn:
             # Add delay so AI vs AI games don't finish in 0.2 seconds
             pygame.time.delay(500) 
-            eval_score, best_move = ai_bot.get_best_move(game, cur_player)
+            nodes_seen, best_move = ai_bot.get_best_move(game, cur_player)
+            print(f"Nodes visited: {nodes_seen}")
            
             # Simply choose the best move and play it, easy
             if best_move:

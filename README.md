@@ -12,7 +12,7 @@ A C++/Python hybrid Checkers AI. Uses Minimax with Alpha-Beta pruning and determ
 
 2. **Compile the C++ Backend:**
    ```bash
-   g++ -O3 -shared -fPIC -o engine.so engine.cpp
+   g++ -O3 -shared -fPIC -std=c++17 -o engine.so engine.cpp
    ```
    *(Note for Windows: Compile as a `.dll` and update the `ctypes` call in `Minimax.py`)*
 
